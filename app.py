@@ -3,7 +3,7 @@ import pandas as pd
 import random
 
 
-SHEET_URL = "https://docs.google.com/spreadsheets/d/1nvX2mTrJO49VykgzNtpdpcTmtbIrXmYOjoFD7ro1T54/edit?usp=sharing"
+SHEET_URL = "https://docs.google.com/spreadsheets/d/1nvX2mTrJO49VykgzNtpdpcTmtbIrXmYOjoFD7ro1T54/export?format=csv"
 
 @st.cache_data(ttl=600) # Cache data for 10 minutes
 def load_data(url):
@@ -44,7 +44,7 @@ def setup_question(df):
 
 # --- ส่วนของหน้าแอป (UI) ---
 
-st.title("🇩🇪 เกมฝึกศัพท์ฉบับจีม 🇩🇪")
+st.title("B2_Goethe_Lektion1")
 
 # โหลดข้อมูล
 data = load_data(SHEET_URL)
