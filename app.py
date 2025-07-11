@@ -19,49 +19,48 @@ def load_data(url):
 
 def setup_question(df):
     """Sets up a new question and choices in the session state."""
-    # ส DataFrame
+    #  DataFrame
     question_row = df.sample(n=1).iloc[0]
     
     st.session_state.question = question_row['Quiz']
     st.session_state.correct_answer_word = question_row['Word']
     st.session_state.full_answer = question_row['Answer']
 
-    # สร้าง Choices
+    # Choices
     correct_answer = st.session_state.correct_answer_word
     
-    # ดึงคำศัพท์ที่ไม่ใช่คำตอบที่ถูกต้องมาสุ่ม
+    
     incorrect_words = df[df['Word'] != correct_answer]['Word'].unique()
     
-    # สุ่ม 3 คำผิด
+    
     if len(incorrect_words) >= 3:
         choices = random.sample(list(incorrect_words), 3) + [correct_answer]
-    else: # กรณีมีคำศัพท์ใน list น้อยกว่า 4 คำ
+    else: 
         choices = list(incorrect_words) + [correct_answer]
 
     random.shuffle(choices)
     st.session_state.choices = choices
-    st.session_state.answered = None # Reset สถานะการตอบ
+    st.session_state.answered = None 
 
-# --- ส่วนของหน้าแอป (UI) ---
+# --- (UI) ---
 
-st.title("B2_Goethe_Lektion1")
+st.title("B2 Goethe")
 
-# โหลดข้อมูล
+
 data = load_data(SHEET_URL)
 
 if data is not None:
-    # เริ่มต้น Session State
     if 'question' not in st.session_state:
         setup_question(data)
 
-    st.subheader("เติมคำในช่องว่างให้ถูกต้อง:")
+    st.subheader("")
     
-    # แสดง "Front-Card" (คำถาม)
+    # แสดง "Front-Card" 
     st.markdown(f"### {st.session_state.question}")
     st.write("---")
 
-    # แสดง Choices
-    st.write("เลือกคำศัพท์ที่ถูกต้อง (รูป Infinitiv):")
+
+    st.write(":")
     cols = st.columns(2) # แบ่งเป็น 2 คอลัมน์
     for i, choice in enumerate(st.session_state.choices):
         with cols[i % 2]:
@@ -74,19 +73,19 @@ if data is not None:
 
     st.write("---")
 
-    # แสดงผลลัพธ์และ "Back-Card" (เฉลย)
+    
     if st.session_state.answered == "correct":
-        st.success(f"ถูกต้อง! 🎉 '{st.session_state.correct_answer_word}' คือคำตอบ")
-        st.info(f"**เฉลย (Card-Back):**\n\n{st.session_state.full_answer}")
+        st.success(f"yeah! 🎉 '{st.session_state.correct_answer_word}' ")
+        st.info(f"**เฉลย**\n\n{st.session_state.full_answer}")
     
     elif st.session_state.answered == "incorrect":
-        st.error("ผิดนะครับ! ลองใหม่ในข้อต่อไป")
-        st.info(f"**เฉลย (Card-Back):**\n\n{st.session_state.full_answer}")
+        st.error("failed :(")
+        st.info(f"**เฉลย:**\n\n{st.session_state.full_answer}")
 
-    # ปุ่มสำหรับไปข้อถัดไป
+    
     if st.session_state.answered:
-        if st.button("ข้อต่อไป! ➡️", use_container_width=True):
+        if st.button("next! ➡️", use_container_width=True):
             setup_question(data)
             st.rerun()
 else:
-    st.warning("กรุณาใส่ URL ของ Google Sheets ในโค้ด `app.py` ให้ถูกต้อง")
+    st.warning("check google sheet url")
