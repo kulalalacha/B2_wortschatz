@@ -353,6 +353,7 @@ else:
             # Using st.cache_data means this reloads only if URL/args change, so we manually
             # ensure 'data' used by setup_question has latest progress from JSON.
             # The initialize_quiz_data will update the 'data' DataFrame being passed.
-            data = initialize_quiz_data(load_data.clear(), st.session_state.username) # Clear cache and reload data with latest progress
+            load_data.clear() # 1. Clear the cache first
+            data = initialize_quiz_data(load_data(SHEET_URL), st.session_state.username) # 2. Then load data again (which will now hit the URL because cache is clear) and pass it
             setup_question(data, st.session_state.username, sort_option, lektion_filter)
             st.rerun()
