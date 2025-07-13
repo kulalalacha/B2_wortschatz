@@ -31,15 +31,11 @@ def load_data(url):
     """Function to load data from a Google Sheet."""
     try:
         df = pd.read_csv(url)
-        # Drop rows where 'Quiz' or 'Word' or 'Answer' or 'Lektion' is empty
         df.dropna(subset=['Quiz', 'Word', 'Answer', 'Lektion'], inplace=True)
-        # Create a unique ID for each row based on Quiz and Word for persistent tracking
         df['Unique_ID'] = df['Quiz'] + "::" + df['Word']
-        
         df['Status'] = 'not started yet'
         df['Richtig Count'] = 0
         df['False Count'] = 0
-        
         return df
     except Exception as e:
         st.error(f"Cannot load Google Sheets URL: {e}. Please ensure the URL is correct and accessible.")
@@ -53,9 +49,8 @@ def initialize_quiz_data(df_base, username):
     if df_base is None or df_base.empty: 
         return pd.DataFrame() 
 
-    df_copy = df_base.copy() # Operate on a copy of the base data
+    df_copy = df_base.copy()
 
-    # Ensure status/count columns are numeric before update
     df_copy['Richtig Count'] = pd.to_numeric(df_copy['Richtig Count'], errors='coerce').fillna(0).astype(int)
     df_copy['False Count'] = pd.to_numeric(df_copy['False Count'], errors='coerce').fillna(0).astype(int)
 
@@ -80,14 +75,13 @@ def initialize_quiz_data(df_base, username):
             df_copy.loc[index, 'False Count'] = int(quiz_progress.get('False Count', 0))
 
         save_user_data(user_data)
-        st.session_state.user_quiz_data[username] = user_data[username] # Update session state's user_quiz_data
+        st.session_state.user_quiz_data[username] = user_data[username]
     else: # Guest or any other user - data is not loaded/saved persistently
-        # For Guest, ensure initial counts are 0, status 'not started yet' for all questions
         for index, row in df_copy.iterrows():
             df_copy.loc[index, 'Status'] = 'not started yet'
             df_copy.loc[index, 'Richtig Count'] = 0
             df_copy.loc[index, 'False Count'] = 0
-        st.session_state.user_quiz_data[username] = {} # Empty dict for guest progress in session state
+        st.session_state.user_quiz_data[username] = {}
         
     return df_copy
 
@@ -140,15 +134,12 @@ def get_filtered_sorted_questions(df_with_progress, sort_option, lektion_filter)
 
     filtered_df = df_with_progress.copy()
 
-    # Apply Lektion filter
     if lektion_filter and lektion_filter != "All":
         filtered_df = filtered_df[filtered_df['Lektion'] == lektion_filter]
 
-    # Ensure 'False Count' and 'Richtig Count' are numeric (double-check for safety)
     filtered_df['False Count'] = pd.to_numeric(filtered_df['False Count'], errors='coerce').fillna(0).astype(int)
     filtered_df['Richtig Count'] = pd.to_numeric(filtered_df['Richtig Count'], errors='coerce').fillna(0).astype(int)
 
-    # Apply sorting logic
     if sort_option == "Not Started Yet":
         not_started = filtered_df[filtered_df['Status'] == 'not started yet']
         if not not_started.empty:
@@ -193,8 +184,6 @@ def setup_question(df_base_original, username, sort_option, lektion_filter):
         st.session_state.current_quiz_id = ""
         return
 
-    # Get the DataFrame with user progress merged for filtering/sorting
-    # This will be persistent for Faeng, temporary for Guest
     df_with_progress_for_selection = initialize_quiz_data(df_base_original, username)
 
     filtered_sorted_df = get_filtered_sorted_questions(df_with_progress_for_selection, sort_option, lektion_filter)
@@ -217,7 +206,6 @@ def setup_question(df_base_original, username, sort_option, lektion_filter):
     
     correct_answer = st.session_state.correct_answer_word
     
-    # Use the original df_base_original for incorrect words pool to ensure all words are considered
     incorrect_words_pool = df_base_original[df_base_original['Word'] != correct_answer]['Word'].unique().tolist()
     
     if correct_answer in incorrect_words_pool: 
@@ -331,8 +319,7 @@ else: # If logged in, show current user and logout option
            st.session_state.get('current_sort_option') != sort_option or \
            st.session_state.get('current_lektion_filter') != lektion_filter:
             
-            # Pass data_base (original DataFrame) and data_for_quiz_logic (with progress)
-            # setup_question now directly gets df_base_original and df_with_progress_for_selection from here
+            # Use data_for_quiz_logic (which has user progress) for question selection
             setup_question(data_base, st.session_state.username, sort_option, lektion_filter) 
             st.session_state.current_user_for_question_setup = st.session_state.username
             st.session_state.current_sort_option = sort_option
@@ -402,14 +389,16 @@ else: # If logged in, show current user and logout option
             load_data.clear() 
             fresh_data_from_sheet = load_data(SHEET_URL)
             if fresh_data_from_sheet is not None and not fresh_data_from_sheet.empty:
-                global data_base # Reassign global data_base
+                # IMPORTANT: Reassign global data_base here after fresh load
+                global data_base 
                 data_base = fresh_data_from_sheet 
                 
                 # Get the DataFrame specifically for quiz logic (with updated user progress)
+                # Pass the (now updated) global data_base to initialize_quiz_data
                 processed_data_for_quiz_logic = initialize_quiz_data(data_base, st.session_state.username)
                 
                 # Setup the next question using the processed data
-                setup_question(processed_data_for_quiz_logic, st.session_state.username, sort_option, lektion_filter)
+                setup_question(data_base, st.session_state.username, sort_option, lektion_filter) # Pass data_base here
             else:
                 st.error("Could not load data for the next question. Please check the Google Sheet URL or ensure it's not empty.")
             st.rerun()
