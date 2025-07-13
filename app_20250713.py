@@ -339,6 +339,45 @@ else:
         st.error("Failed :(")
         st.info(f"**เฉลย:**\n\n{st.session_state.full_answer}")
 
+    # --- Feedback and Answer Display ---
+if st.session_state.answered == "correct":
+    st.success(f"Yeah! 🎉 '{st.session_state.correct_answer_word}' ")
+    st.info(f"**เฉลย**\n\n{st.session_state.full_answer}")
+    
+elif st.session_state.answered == "incorrect":
+    st.error("Failed :(")
+    st.info(f"**เฉลย:**\n\n{st.session_state.full_answer}")
+
+# --- Pop-up for Word Detail ---
+# Ensure current_quiz_id is set and data is available before showing the button
+if st.session_state.get('current_quiz_id') and data is not None and not data.empty:
+    # Find the row for the current word using Unique_ID
+    current_word_detail = data[data['Unique_ID'] == st.session_state.current_quiz_id]
+    
+    if not current_word_detail.empty:
+        with st.popover("See word detail"):
+            st.markdown(f"**Word Details for: `{st.session_state.correct_answer_word}`**")
+            # Display the relevant columns from your Google Sheet for this single row
+            # You can customize which columns to show here.
+            # Example: st.write(current_word_detail[['Quiz', 'Word', 'Answer', 'Lektion', 'MoreInfoColumn']].transpose())
+            # For simplicity, let's just show the entire row's details transposing it for better readability in popover.
+            st.dataframe(current_word_detail.transpose(), use_container_width=True)
+            # You might want to format this more cleanly, e.g., using st.write for each detail:
+            # st.write(f"**Quiz:** {current_word_detail['Quiz'].iloc[0]}")
+            # st.write(f"**Word:** {current_word_detail['Word'].iloc[0]}")
+            # st.write(f"**Answer:** {current_word_detail['Answer'].iloc[0]}")
+            # st.write(f"**Lektion:** {current_word_detail['Lektion'].iloc[0]}")
+    else:
+        st.warning("Word details not found for this question.")
+
+
+# Display current question's Richtig/False Counts if answered
+if st.session_state.answered is not None and st.session_state.current_quiz_id:
+    current_quiz_data = st.session_state.user_quiz_data[st.session_state.username].get(st.session_state.current_quiz_id, {})
+    st.write(f"**Richtig Count:** {current_quiz_data.get('Richtig Count', 0)} | **False Count:** {current_quiz_data.get('False Count', 0)}")
+
+# --- Next Question Button ---
+# ... (rest of your code for the next button)
     # Display current question's Richtig/False Counts if answered
     if st.session_state.answered is not None and st.session_state.current_quiz_id:
         current_quiz_data = st.session_state.user_quiz_data[st.session_state.username].get(st.session_state.current_quiz_id, {})
