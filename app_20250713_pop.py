@@ -383,22 +383,19 @@ else: # If logged in, show current user and logout option
         st.write(f"**Richtig Count:** {current_quiz_data.get('Richtig Count', 0)} | **False Count:** {current_quiz_data.get('False Count', 0)}")
 
 
-    # --- Next Question Button ---
+# --- Next Question Button ---
     if st.session_state.answered is not None or not st.session_state.choices: 
         if st.button("Next! ➡️", use_container_width=True):
             load_data.clear() 
             fresh_data_from_sheet = load_data(SHEET_URL)
             if fresh_data_from_sheet is not None and not fresh_data_from_sheet.empty:
-                # IMPORTANT: Reassign global data_base here after fresh load
-                global data_base 
-                data_base = fresh_data_from_sheet 
+                # No 'global data_base' needed here. data_base is already a module-level global.
+                # We are simply re-assigning the module-level 'data_base' variable.
+                data_base = fresh_data_from_sheet # This will now re-assign the global data_base directly
                 
-                # Get the DataFrame specifically for quiz logic (with updated user progress)
-                # Pass the (now updated) global data_base to initialize_quiz_data
                 processed_data_for_quiz_logic = initialize_quiz_data(data_base, st.session_state.username)
                 
-                # Setup the next question using the processed data
-                setup_question(data_base, st.session_state.username, sort_option, lektion_filter) # Pass data_base here
+                setup_question(processed_data_for_quiz_logic, st.session_state.username, sort_option, lektion_filter)
             else:
                 st.error("Could not load data for the next question. Please check the Google Sheet URL or ensure it's not empty.")
             st.rerun()
