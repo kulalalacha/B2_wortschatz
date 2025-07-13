@@ -95,12 +95,15 @@ def update_quiz_progress(unique_id, is_correct, username):
     st.session_state.user_quiz_data[username][unique_id] = current_progress
 
 
-def get_filtered_sorted_questions(df, username, sort_option, lektion_filter):
+def get_filtered_sorted_questions(df_with_progress, username, sort_option, lektion_filter):
     """
     Filters and sorts the DataFrame based on user's selected options.
+    Receives df_with_progress which already includes user-specific counts and status.
     """
-    # Use the df which has been updated with current user's progress
-    filtered_df = df.copy()
+    if df_with_progress.empty:
+        return pd.DataFrame()
+
+    filtered_df = df_with_progress.copy()
 
     # Apply Lektion filter
     if lektion_filter and lektion_filter != "All":
@@ -113,15 +116,37 @@ def get_filtered_sorted_questions(df, username, sort_option, lektion_filter):
         if not not_started.empty:
             filtered_df = not_started
         else:
-            # If all are started, fall through to 'False Count > 0' logic
+            # Fallback to questions with False Count > 0 (any richtig count) if all are started
             questions_to_review = filtered_df[filtered_df['False Count'] > 0]
             if not questions_to_review.empty:
                 filtered_df = questions_to_review.sort_values(by='False Count', ascending=False)
+            # If everything is 'done' and 'False Count' is 0, just return the filtered_df as is for random sample
+            
     elif sort_option == "False Count > 0":
-        filtered_df = filtered_df[filtered_df['False Count'] > 0].sort_values(by='False Count', ascending=False)
-        # If no questions with False Count > 0, fallback to all questions
-        if filtered_df.empty:
-            filtered_df = df.copy() # Use original data to ensure we always have questions
+        # Ensure 'False Count' and 'Richtig Count' are numeric
+        filtered_df['False Count'] = pd.to_numeric(filtered_df['False Count'], errors='coerce').fillna(0).astype(int)
+        filtered_df['Richtig Count'] = pd.to_numeric(filtered_df['Richtig Count'], errors='coerce').fillna(0).astype(int)
+
+        # Apply the new condition: False Count > 0 AND Richtig Count = 0
+        questions_to_review_specific = filtered_df[(filtered_df['False Count'] > 0) & (filtered_df['Richtig Count'] == 0)]
+        
+        if not questions_to_review_specific.empty:
+            # Prioritize those you've failed but not yet corrected
+            filtered_df = questions_to_review_specific.sort_values(by='False Count', ascending=False)
+        else:
+            # Fallback: if no words meet the (False > 0 AND Richtig = 0) criteria,
+            # then show any word with False Count > 0 (even if Richtig > 0)
+            questions_with_any_false = filtered_df[filtered_df['False Count'] > 0]
+            if not questions_with_any_false.empty:
+                filtered_df = questions_with_any_false.sort_values(by='False Count', ascending=False)
+            else:
+                # If no questions with False Count > 0 at all, fallback to all filtered by Lektion
+                fallback_df = df_with_progress.copy()
+                if lektion_filter and lektion_filter != "All":
+                    fallback_df = fallback_df[fallback_df['Lektion'] == lektion_filter]
+                filtered_df = fallback_df
+                st.info(f"No questions with 'False Count > 0' found for Lektion '{lektion_filter if lektion_filter != 'All' else 'All'}'. Displaying random questions.")
+
     elif sort_option == "By Lektion":
         filtered_df = filtered_df.sort_values(by='Lektion')
     # "Random" doesn't need specific sorting here, just ensures filtered_df is available
