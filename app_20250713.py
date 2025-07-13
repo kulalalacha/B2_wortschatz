@@ -340,7 +340,9 @@ else:
         st.error("Failed :(")
         st.info(f"**เฉลย:**\n\n{st.session_state.full_answer}")
 
-# --- Pop-up for Word Detail ---
+# <--- INSERT THE "SEE WORD DETAIL" CODE BLOCK HERE --->
+
+    # --- Pop-up for Word Detail ---
     # Ensure current_quiz_id is set and data_base is available before showing the button
     # IMPORTANT: Use 'data_base' here, as it's the original DataFrame with all columns
     if st.session_state.get('current_quiz_id') and data_base is not None and not data_base.empty:
@@ -349,7 +351,22 @@ else:
         if not current_word_detail.empty:
             with st.popover("See word detail"):
                 st.markdown(f"**Word Details for: `{st.session_state.correct_answer_word}`**")
+                
+                # Option 1: Display as a transposed DataFrame (as in the example image you provided)
                 st.dataframe(current_word_detail.transpose(), use_container_width=True)
+
+                # Option 2: Display specific fields for cleaner look (uncomment and customize if preferred)
+                # st.write(f"**Word Type:** {current_word_detail['WordType'].iloc[0]}")
+                # st.write(f"**English translation:** {current_word_detail['English translation'].iloc[0]}")
+                # st.write(f"**Pronunciation (Thai):** {current_word_detail['Pronunciation (Thai)'].iloc[0]}")
+                # st.write(f"**Forms:** {current_word_detail['Forms'].iloc[0]}")
+                # st.write(f"**Verben Verwendung:** {current_word_detail['Verben Verwendung'].iloc[0]}")
+                # st.write(f"**Example sentences:** {current_word_detail['Example sentences'].iloc[0]}")
+                # st.write(f"**Quiz:** {current_word_detail['Quiz'].iloc[0]}")
+                # st.write(f"**Answer:** {current_word_detail['Answer'].iloc[0]}")
+                # st.write(f"**Lektion:** {current_word_detail['Lektion'].iloc[0]}")
+                # st.write(f"**bilden:** {current_word_detail['bilden'].iloc[0]}") # Adjust column name if 'bilden' is a specific column
+
         else:
             st.warning("Word details not found for this question.")
 
