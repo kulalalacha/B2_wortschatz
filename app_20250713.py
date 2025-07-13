@@ -341,44 +341,34 @@ else:
         st.info(f"**เฉลย:**\n\n{st.session_state.full_answer}")
 
 # --- Pop-up for Word Detail ---
-# Ensure current_quiz_id is set and data is available before showing the button
-if st.session_state.get('current_quiz_id') and data is not None and not data.empty:
-    # Find the row for the current word using Unique_ID
-    current_word_detail = data[data['Unique_ID'] == st.session_state.current_quiz_id]
-    
-    if not current_word_detail.empty:
-        with st.popover("See word detail"):
-            st.markdown(f"**Word Details for: `{st.session_state.correct_answer_word}`**")
-            # Display the relevant columns from your Google Sheet for this single row
-            # You can customize which columns to show here.
-            # Example: st.write(current_word_detail[['Quiz', 'Word', 'Answer', 'Lektion', 'MoreInfoColumn']].transpose())
-            # For simplicity, let's just show the entire row's details transposing it for better readability in popover.
-            st.dataframe(current_word_detail.transpose(), use_container_width=True)
-            # You might want to format this more cleanly, e.g., using st.write for each detail:
-            # st.write(f"**Quiz:** {current_word_detail['Quiz'].iloc[0]}")
-            # st.write(f"**Word:** {current_word_detail['Word'].iloc[0]}")
-            # st.write(f"**Answer:** {current_word_detail['Answer'].iloc[0]}")
-            # st.write(f"**Lektion:** {current_word_detail['Lektion'].iloc[0]}")
-    else:
-        st.warning("Word details not found for this question.")
+    # Ensure current_quiz_id is set and data_base is available before showing the button
+    # IMPORTANT: Use 'data_base' here, as it's the original DataFrame with all columns
+    if st.session_state.get('current_quiz_id') and data_base is not None and not data_base.empty:
+        current_word_detail = data_base[data_base['Unique_ID'] == st.session_state.current_quiz_id]
+        
+        if not current_word_detail.empty:
+            with st.popover("See word detail"):
+                st.markdown(f"**Word Details for: `{st.session_state.correct_answer_word}`**")
+                st.dataframe(current_word_detail.transpose(), use_container_width=True)
+        else:
+            st.warning("Word details not found for this question.")
 
-
-# Display current question's Richtig/False Counts if answered
-if st.session_state.answered is not None and st.session_state.current_quiz_id:
-    current_quiz_data = st.session_state.user_quiz_data[st.session_state.username].get(st.session_state.current_quiz_id, {})
-    st.write(f"**Richtig Count:** {current_quiz_data.get('Richtig Count', 0)} | **False Count:** {current_quiz_data.get('False Count', 0)}")
-
-# --- Next Question Button ---
-# ... (rest of your code for the next button)
     # Display current question's Richtig/False Counts if answered
     if st.session_state.answered is not None and st.session_state.current_quiz_id:
         current_quiz_data = st.session_state.user_quiz_data[st.session_state.username].get(st.session_state.current_quiz_id, {})
         st.write(f"**Richtig Count:** {current_quiz_data.get('Richtig Count', 0)} | **False Count:** {current_quiz_data.get('False Count', 0)}")
 
     # --- Next Question Button ---
-    if st.session_state.answered is not None or not st.session_state.choices: # Show next button if answered or no choices
+    if st.session_state.answered is not None or not st.session_state.choices: 
         if st.button("Next! ➡️", use_container_width=True):
-            # Re-initialize data to get the latest progress from user_data.json for next question selection
-            data = initialize_quiz_data(data, st.session_state.username) 
-            setup_question(data, st.session_state.username, sort_option, lektion_filter)
+            load_data.clear() # Clear cache for load_data
+            # Re-load data (this will re-fetch from URL because cache is cleared)
+            fresh_data_from_sheet = load_data(SHEET_URL)
+            if fresh_data_from_sheet is not None and not fresh_data_from_sheet.empty:
+                # Pass the 'fresh_data_from_sheet' (base data) to initialize_quiz_data
+                processed_data = initialize_quiz_data(fresh_data_from_sheet, st.session_state.username)
+                # Then use the 'processed_data' (with user progress) for setup_question
+                setup_question(processed_data, st.session_state.username, sort_option, lektion_filter)
+            else:
+                st.error("Could not load data for the next question. Please check the Google Sheet URL or ensure it's not empty.")
             st.rerun()
