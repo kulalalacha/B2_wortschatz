@@ -330,23 +330,15 @@ else:
 
     st.write("---")
 
+
     # --- Feedback and Answer Display ---
     if st.session_state.answered == "correct":
         st.success(f"Yeah! 🎉 '{st.session_state.correct_answer_word}' ")
         st.info(f"**เฉลย**\n\n{st.session_state.full_answer}")
-        
+    
     elif st.session_state.answered == "incorrect":
         st.error("Failed :(")
         st.info(f"**เฉลย:**\n\n{st.session_state.full_answer}")
-
-    # --- Feedback and Answer Display ---
-if st.session_state.answered == "correct":
-    st.success(f"Yeah! 🎉 '{st.session_state.correct_answer_word}' ")
-    st.info(f"**เฉลย**\n\n{st.session_state.full_answer}")
-    
-elif st.session_state.answered == "incorrect":
-    st.error("Failed :(")
-    st.info(f"**เฉลย:**\n\n{st.session_state.full_answer}")
 
 # --- Pop-up for Word Detail ---
 # Ensure current_quiz_id is set and data is available before showing the button
