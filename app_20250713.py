@@ -341,19 +341,25 @@ else:
         st.info(f"**เฉลย:**\n\n{st.session_state.full_answer}")
 
 # <--- INSERT THE "SEE WORD DETAIL" CODE BLOCK HERE --->
-
-    # --- Pop-up for Word Detail ---
+            # --- Pop-up for Word Detail ---
     # Ensure current_quiz_id is set and data_base is available before showing the button
     # IMPORTANT: Use 'data_base' here, as it's the original DataFrame with all columns
-    if st.session_state.get('current_quiz_id') and data_base is not None and not data_base.empty:
+        if st.session_state.get('current_quiz_id') and data_base is not None and not data_base.empty:
+        # Filter the ORIGINAL 'data_base' to find the row
         current_word_detail = data_base[data_base['Unique_ID'] == st.session_state.current_quiz_id]
         
         if not current_word_detail.empty:
             with st.popover("See word detail"):
                 st.markdown(f"**Word Details for: `{st.session_state.correct_answer_word}`**")
-                
-                # Option 1: Display as a transposed DataFrame (as in the example image you provided)
                 st.dataframe(current_word_detail.transpose(), use_container_width=True)
+        else:
+            st.warning("Word details not found for this question in the base data.")
+
+    # Display current question's Richtig/False Counts if answered
+    if st.session_state.answered is not None and st.session_state.current_quiz_id:
+        current_quiz_data = st.session_state.user_quiz_data[st.session_state.username].get(st.session_state.current_quiz_id, {})
+        st.write(f"**Richtig Count:** {current_quiz_data.get('Richtig Count', 0)} | **False Count:** {current_quiz_data.get('False Count', 0)}")
+
 
                 # Option 2: Display specific fields for cleaner look (uncomment and customize if preferred)
                 # st.write(f"**Word Type:** {current_word_detail['WordType'].iloc[0]}")
@@ -367,13 +373,6 @@ else:
                 # st.write(f"**Lektion:** {current_word_detail['Lektion'].iloc[0]}")
                 # st.write(f"**bilden:** {current_word_detail['bilden'].iloc[0]}") # Adjust column name if 'bilden' is a specific column
 
-        else:
-            st.warning("Word details not found for this question.")
-
-    # Display current question's Richtig/False Counts if answered
-    if st.session_state.answered is not None and st.session_state.current_quiz_id:
-        current_quiz_data = st.session_state.user_quiz_data[st.session_state.username].get(st.session_state.current_quiz_id, {})
-        st.write(f"**Richtig Count:** {current_quiz_data.get('Richtig Count', 0)} | **False Count:** {current_quiz_data.get('False Count', 0)}")
 
     # --- Next Question Button ---
     if st.session_state.answered is not None or not st.session_state.choices: 
